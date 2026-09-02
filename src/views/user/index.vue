@@ -58,6 +58,8 @@ const total = ref(0);
 const queryParams = ref({
   start: 0,
   length: 10,
+  current: 0,
+  size: 10,
   role: -1,
   username: '',
 });
@@ -66,6 +68,7 @@ const queryParams = ref({
 /** 查询参数列表 */
 function getList() {
   loading.value = true;
+  queryParams.value.start = queryParams.value.current *  queryParams.value.size
   userPage(queryParams.value).then(res => {
     dataList.value = res.data;
     // res.recordsFiltered

@@ -102,6 +102,8 @@ const dateRange = ref([]);
 const queryParams = ref({
   start: 0,
   length: 10,
+  current: 0,
+  size: 10,
   jobGroup: -1,
   jobId: 0,
   logStatus: -1,
@@ -188,7 +190,7 @@ function getList() {
     const to = dateRange.value[1];
     queryParams.value.filterTime = from + ' - '+ to;
   }
-
+  queryParams.value.start = queryParams.value.current *  queryParams.value.size
   joblogPage(queryParams.value).then(res => {
     dataList.value = res.data;
     // res.recordsFiltered

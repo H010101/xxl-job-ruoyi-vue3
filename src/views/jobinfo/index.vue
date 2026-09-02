@@ -109,6 +109,8 @@ const total = ref(0);
 const queryParams = ref({
   start: 0,
   length: 10,
+  current: 0,
+  size: 10,
   jobGroup: 1,
   triggerStatus: -1,
   jobDesc: '',
@@ -142,6 +144,7 @@ function getList() {
     return;
   }
   loading.value = true;
+  queryParams.value.start = queryParams.value.current *  queryParams.value.size
   jobinfoPage(queryParams.value).then(res => {
     dataList.value = res.data;
     // res.recordsFiltered
