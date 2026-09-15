@@ -66,7 +66,7 @@ export default {
       queryParams: {
         start: 0,
         length: 10,
-        current: 0,
+        current: 1,
         size: 10,
         appname: '',
         title: '',
@@ -81,7 +81,7 @@ export default {
     /** 查询参数列表 */
     getList() {
       this.loading = true;
-      this.queryParams.start = this.queryParams.current * this.queryParams.size;
+      this.queryParams.start = (this.queryParams.current - 1) * this.queryParams.size;
       jobgroupPage(this.queryParams).then(res => {
         this.dataList = res.data;
         // res.recordsFiltered
@@ -92,7 +92,7 @@ export default {
     },
     /** 搜索按钮操作 */
     handleQuery() {
-      this.queryParams.current = 0;
+      this.queryParams.current = 1;
       this.getList();
     },
     /** 重置按钮操作 */
