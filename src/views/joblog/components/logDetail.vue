@@ -41,6 +41,11 @@ export default {
       form: {}
     };
   },
+  destroyed() {
+    if (this.interval !== null) {
+      clearInterval(this.interval);
+    }
+  },
   methods: {
     /** 表单重置 */
     reset() {
@@ -59,13 +64,14 @@ export default {
     init(row) {
       this.reset();
       this.param = row;
+      this.open = true;
       this.getLog();
       this.setInterval4Log();
     },
 
     setInterval4Log() {
       if (this.interval !== null) {
-        return;
+        clearInterval(this.interval);
       }
       this.interval = setInterval(() => {
         if (this.refreshTime && this.baseTime % (this.refreshTime * 1000) === 0) {
@@ -89,7 +95,6 @@ export default {
           this.$modal.msgSuccess("获取日志成功！");
         }
         this.logTime = new Date();
-        this.open = true;
       })
     }
   }
