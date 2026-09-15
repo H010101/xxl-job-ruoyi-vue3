@@ -50,68 +50,71 @@
    </div>
 </template>
 
-<script setup name="Jobgroup">
+<script>
 import {jobgroupPage, jobgroupRemove} from "@/api/jobgroup";
 import Edit from "./components/edit"
 import AddressType from "@/api/dict/AddressType.json"
 
-const { proxy } = getCurrentInstance();
-
-const dataList = ref([]);
-const loading = ref(false);
-const total = ref(0);
-
-const queryParams = ref({
-  start: 0,
-  length: 10,
-  current: 0,
-  size: 10,
-  appname: '',
-  title: '',
-});
-
-
-/** 查询参数列表 */
-function getList() {
-  loading.value = true;
-  queryParams.value.start = queryParams.value.current *  queryParams.value.size
-  jobgroupPage(queryParams.value).then(res => {
-    dataList.value = res.data;
-    // res.recordsFiltered
-    total.value = res.recordsTotal;
-  }).finally(() => {
-    loading.value = false;
-  });
-}
-
-/** 搜索按钮操作 */
-function handleQuery() {
-  queryParams.value.current = 0;
-  getList();
-}
-
-/** 重置按钮操作 */
-function resetQuery() {
-  proxy.resetForm("queryRef");
-  handleQuery();
-}
-
-function handleAdd() {
-  proxy.$refs["editRef"].handleEdit();
-}
-function handleUpdate(row) {
-  proxy.$refs["editRef"].handleEdit(row);
-}
-
-/** 删除按钮操作 */
-function handleDelete(row) {
-  proxy.$modal.confirm('是否确认删除:"' + row.appname + '"？').then(() => {
-    jobgroupRemove({id: row.id}).then(res => {
-      getList();
-      proxy.$modal.msgSuccess("删除成功");
-    })
-  }).catch(() => {});
-}
-
-getList();
+export default {
+  name: "Jobgroup",
+  components: { Edit },
+  data() {
+    return {
+      dataList: [],
+      loading: false,
+      total: 0,
+      queryParams: {
+        start: 0,
+        length: 10,
+        current: 0,
+        size: 10,
+        appname: '',
+        title: '',
+      },
+      AddressType,
+    };
+  },
+  created() {
+    this.getList();
+  },
+  methods: {
+    /** 查询参数列表 */
+    getList() {
+      this.loading = true;
+      this.queryParams.start = this.queryParams.current * this.queryParams.size;
+      jobgroupPage(this.queryParams).then(res => {
+        this.dataList = res.data;
+        // res.recordsFiltered
+        this.total = res.recordsTotal;
+      }).finally(() => {
+        this.loading = false;
+      });
+    },
+    /** 搜索按钮操作 */
+    handleQuery() {
+      this.queryParams.current = 0;
+      this.getList();
+    },
+    /** 重置按钮操作 */
+    resetQuery() {
+      this.resetForm("queryRef");
+      this.handleQuery();
+    },
+    handleAdd() {
+      this.$refs["editRef"].handleEdit();
+    },
+    handleUpdate(row) {
+      this.$refs["editRef"].handleEdit(row);
+    },
+    /** 删除按钮操作 */
+    handleDelete(row) {
+      this.$modal.confirm('是否确认删除:"' + row.appname + '"？').then(() => {
+        jobgroupRemove({id: row.id}).then(res => {
+          this.getList();
+          this.$modal.msgSuccess("删除成功");
+        })
+      }).catch(() => {});
+    },
+  }
+};
 </script>

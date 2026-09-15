@@ -187,151 +187,150 @@ exit 0
   </el-dialog>
 </template>
 
-<script setup name="JobinfoEdit">
+<script>
 import {jobinfoAdd, jobinfoUpdate} from "@/api/jobinfo";
 import {jobgroupPage} from "@/api/jobgroup";
-
 import Crontab from '@/components/Crontab'
-
 import GlueType from "@/api/dict/GlueType.json"
 import ScheduleType from "@/api/dict/ScheduleType.json"
 import MisfireStrategy from "@/api/dict/MisfireStrategy.json"
 import ExecutorRouteStrategy from "@/api/dict/ExecutorRouteStrategy.json"
 import ExecutorBlockStrategy from "@/api/dict/ExecutorBlockStrategy.json"
 
-defineExpose({handleEdit})
-const emit = defineEmits(['change']);
-const { proxy } = getCurrentInstance();
-const open = ref(false);
-const title = ref("");
-const appOptions = ref([]);
-const form = ref({});
-
-const openCron = ref(false);
-const expression = ref("");
-
-const rules = ref({
-  jobGroup: [{ required: true, message: "执行器 不能为空", trigger: "blur" }],
-  jobDesc: [{ required: true, message: "任务描述 不能为空", trigger: "blur" }],
-  author: [{ required: true, message: "负责人 不能为空", trigger: "blur" }],
-  alarmEmail: [{ required: false, message: "报警邮件 不能为空", trigger: "blur" }],
-  scheduleType: [{ required: false, message: "调度类型 不能为空", trigger: "blur" }],
-  schedule_conf_CRON: [{ required: true, message: "Cron 不能为空", trigger: "blur" }],
-  glueType: [{ required: true, message: "运行模式 不能为空", trigger: "blur" }],
-  executorHandler: [{ required: true, message: "路由策略 不能为空", trigger: "blur" }],
-  executorRouteStrategy: [{ required: true, message: "路由策略 不能为空", trigger: "blur" }],
-  misfireStrategy: [{ required: true, message: "阻塞处理策略 不能为空", trigger: "blur" }],
-  executorBlockStrategy: [{ required: true, message: "阻塞处理策略 不能为空", trigger: "blur" }],
-});
-
-
-/** 表单重置 */
-function reset() {
-  form.value = {
-    scheduleType: 'CRON',
-    glueType: 'BEAN',
-    executorRouteStrategy: 'FIRST',
-    misfireStrategy: 'DO_NOTHING',
-    executorBlockStrategy: 'SERIAL_EXECUTION',
-  };
-  proxy.resetForm("editRef");
-}
-
-/** 取消按钮 */
-function cancel() {
-  open.value = false;
-  reset();
-}
-
-// 新增/修改按钮操作
-function handleEdit(row) {
-  reset();
-  if (!row || !row.id) {
-    open.value = true;
-    title.value = "添加";
-    if (row) {
-      form.value = JSON.parse(JSON.stringify(row))
-      initScheduleConf();
-    }
-  } else {
-    form.value = JSON.parse(JSON.stringify(row))
-    initScheduleConf();
-    open.value = true;
-    title.value = "修改";
-  }
-  getApps();
-}
-
-function initScheduleConf() {
-  if (form.value.scheduleType === 'CRON') {
-    form.value.schedule_conf_CRON = form.value.scheduleConf;
-  }
-  if (form.value.scheduleType === 'FIX_RATE') {
-    form.value.schedule_conf_FIX_RATE = form.value.scheduleConf;
-  }
-  if (form.value.scheduleType === 'FIX_DELAY') {
-    form.value.schedule_conf_FIX_DELAY = form.value.scheduleConf;
-  }
-}
-
-function getApps() {
-  jobgroupPage({
-    start: 0,
-    length: 10000,
-    appname: '',
-    title: ''
-  }).then(res => {
-    appOptions.value = res.data;
-  });
-}
-
-
-function handleShowCron() {
-  expression.value = form.value.schedule_conf_CRON;
-  openCron.value = true;
-}
-/** 确定后回传值 */
-function crontabFill(value) {
-  form.value.schedule_conf_CRON = value;
-}
-
-
-/** 提交按钮 */
-function submitForm() {
-  proxy.$refs["editRef"].validate(valid => {
-    if (valid) {
-      if (form.value.scheduleType === 'CRON') {
-        form.value.scheduleConf = form.value.schedule_conf_CRON;
-      }
-      if (form.value.scheduleType === 'FIX_RATE') {
-        form.value.scheduleConf = form.value.schedule_conf_FIX_RATE;
-      }
-      if (form.value.scheduleType === 'FIX_DELAY') {
-        form.value.scheduleConf = form.value.schedule_conf_FIX_DELAY;
-      }
-      if (!form.value.id && form.value.glueType !== 'BEAN') {
-        const glueSource = document.getElementById(form.value.glueType);
-        form.value.glueSource = glueSource.textContent;
-        form.value.glueRemark = 'GLUE代码初始化';
-      }
-
-      form.value.addTime = undefined;
-      form.value.updateTime = undefined;
-      form.value.glueUpdatetime = undefined;
-      if (form.value.id) {
-        jobinfoUpdate(form.value).then(res => {
-          proxy.$modal.msgSuccess('修改成功');
-          open.value = false;
-          emit("change", true);
-        });
+export default {
+  name: "JobinfoEdit",
+  components: { Crontab },
+  emits: ['change'],
+  data() {
+    return {
+      open: false,
+      title: "",
+      appOptions: [],
+      form: {},
+      openCron: false,
+      expression: "",
+      rules: {
+        jobGroup: [{ required: true, message: "执行器 不能为空", trigger: "blur" }],
+        jobDesc: [{ required: true, message: "任务描述 不能为空", trigger: "blur" }],
+        author: [{ required: true, message: "负责人 不能为空", trigger: "blur" }],
+        alarmEmail: [{ required: false, message: "报警邮件 不能为空", trigger: "blur" }],
+        scheduleType: [{ required: false, message: "调度类型 不能为空", trigger: "blur" }],
+        schedule_conf_CRON: [{ required: true, message: "Cron 不能为空", trigger: "blur" }],
+        glueType: [{ required: true, message: "运行模式 不能为空", trigger: "blur" }],
+        executorHandler: [{ required: true, message: "路由策略 不能为空", trigger: "blur" }],
+        executorRouteStrategy: [{ required: true, message: "路由策略 不能为空", trigger: "blur" }],
+        misfireStrategy: [{ required: true, message: "阻塞处理策略 不能为空", trigger: "blur" }],
+        executorBlockStrategy: [{ required: true, message: "阻塞处理策略 不能为空", trigger: "blur" }],
+      },
+      GlueType,
+      ScheduleType,
+      MisfireStrategy,
+      ExecutorRouteStrategy,
+      ExecutorBlockStrategy,
+    };
+  },
+  methods: {
+    /** 表单重置 */
+    reset() {
+      this.form = {
+        scheduleType: 'CRON',
+        glueType: 'BEAN',
+        executorRouteStrategy: 'FIRST',
+        misfireStrategy: 'DO_NOTHING',
+        executorBlockStrategy: 'SERIAL_EXECUTION',
+      };
+      this.resetForm("editRef");
+    },
+    /** 取消按钮 */
+    cancel() {
+      this.open = false;
+      this.reset();
+    },
+    // 新增/修改按钮操作
+    handleEdit(row) {
+      this.reset();
+      if (!row || !row.id) {
+        this.open = true;
+        this.title = "添加";
+        if (row) {
+          this.form = JSON.parse(JSON.stringify(row));
+          this.initScheduleConf();
+        }
       } else {
-        jobinfoAdd(form.value).then(res => {
-          proxy.$modal.msgSuccess('新增成功');
-          open.value = false;
-          emit("change", true);
-        });
+        this.form = JSON.parse(JSON.stringify(row));
+        this.initScheduleConf();
+        this.open = true;
+        this.title = "修改";
       }
-    }
-  });
-}
+      this.getApps();
+    },
+    initScheduleConf() {
+      if (this.form.scheduleType === 'CRON') {
+        this.form.schedule_conf_CRON = this.form.scheduleConf;
+      }
+      if (this.form.scheduleType === 'FIX_RATE') {
+        this.form.schedule_conf_FIX_RATE = this.form.scheduleConf;
+      }
+      if (this.form.scheduleType === 'FIX_DELAY') {
+        this.form.schedule_conf_FIX_DELAY = this.form.scheduleConf;
+      }
+    },
+    getApps() {
+      jobgroupPage({
+        start: 0,
+        length: 10000,
+        appname: '',
+        title: ''
+      }).then(res => {
+        this.appOptions = res.data;
+      });
+    },
+    handleShowCron() {
+      this.expression = this.form.schedule_conf_CRON;
+      this.openCron = true;
+    },
+    /** 确定后回传值 */
+    crontabFill(value) {
+      this.form.schedule_conf_CRON = value;
+    },
+    /** 提交按钮 */
+    submitForm() {
+      this.$refs["editRef"].validate(valid => {
+        if (valid) {
+          if (this.form.scheduleType === 'CRON') {
+            this.form.scheduleConf = this.form.schedule_conf_CRON;
+          }
+          if (this.form.scheduleType === 'FIX_RATE') {
+            this.form.scheduleConf = this.form.schedule_conf_FIX_RATE;
+          }
+          if (this.form.scheduleType === 'FIX_DELAY') {
+            this.form.scheduleConf = this.form.schedule_conf_FIX_DELAY;
+          }
+          if (!this.form.id && this.form.glueType !== 'BEAN') {
+            const glueSource = document.getElementById(this.form.glueType);
+            this.form.glueSource = glueSource.textContent;
+            this.form.glueRemark = 'GLUE代码初始化';
+          }
+
+          this.form.addTime = undefined;
+          this.form.updateTime = undefined;
+          this.form.glueUpdatetime = undefined;
+          if (this.form.id) {
+            jobinfoUpdate(this.form).then(res => {
+              this.$modal.msgSuccess('修改成功');
+              this.open = false;
+              this.$emit("change", true);
+            });
+          } else {
+            jobinfoAdd(this.form).then(res => {
+              this.$modal.msgSuccess('新增成功');
+              this.open = false;
+              this.$emit("change", true);
+            });
+          }
+        }
+      });
+    },
+  }
+};
 </script>

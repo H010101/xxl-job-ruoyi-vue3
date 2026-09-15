@@ -20,74 +20,80 @@
   </el-dialog>
 </template>
 
-<script setup name="LogDetail">
+<script>
 import {joblogLogDetailCat} from "@/api/joblog";
 import MonacoEditor from '@/components/MonacoEditor'
 
-defineExpose({init})
-const { proxy } = getCurrentInstance();
-const open = ref(false);
-const title = ref("");
+export default {
+  name: "LogDetail",
+  components: {
+    MonacoEditor
+  },
+  data() {
+    return {
+      open: false,
+      title: "",
+      baseTime: 1000,
+      refreshTime: 5,
+      interval: null,
+      logTime: null,
+      param: {},
+      form: {}
+    };
+  },
+  methods: {
+    /** 表单重置 */
+    reset() {
+      this.form = {};
+      this.param = {};
+      this.resetForm("editRef");
+    },
 
-const baseTime = ref(1000);
-const refreshTime = ref(5);
-let interval = null;
-const logTime = ref(null)
-const param = ref({});
-const form = ref({});
+    /** 取消按钮 */
+    cancel() {
+      this.open = false;
+      this.reset();
+    },
 
+    // 新增/修改按钮操作
+    init(row) {
+      this.reset();
+      this.param = row;
+      this.getLog();
+      this.setInterval4Log();
+    },
 
-/** 表单重置 */
-function reset() {
-  form.value = {};
-  param.value = {};
-  proxy.resetForm("editRef");
-}
+    setInterval4Log() {
+      if (this.interval !== null) {
+        return;
+      }
+      this.interval = setInterval(() => {
+        if (this.refreshTime && this.baseTime % (this.refreshTime * 1000) === 0) {
+          this.getLog();
+        }
+        this.baseTime = this.baseTime + 1000;
+      }, 1000)
+    },
 
-/** 取消按钮 */
-function cancel() {
-  open.value = false;
-  reset();
-}
-
-// 新增/修改按钮操作
-function init(row) {
-  reset();
-  param.value = row;
-  getLog();
-  setInterval4Log();
-}
-
-function setInterval4Log() {
-  if (interval !== null) {
-    return;
-  }
-  interval = setInterval(() => {
-    if (refreshTime.value && baseTime.value % (refreshTime.value * 1000) === 0) {
-      getLog();
+    getLog() {
+      if (!this.param.id) {
+        clearInterval(this.interval);
+        return;
+      }
+      joblogLogDetailCat({
+        logId: this.param.id,
+        fromLineNum: 1
+      }).then(res => {
+        this.form = res.content;
+        if (this.refreshTime === 0) {
+          this.$modal.msgSuccess("获取日志成功！");
+        }
+        this.logTime = new Date();
+        this.open = true;
+      })
     }
-    baseTime.value = baseTime.value + 1000;
-  }, 1000)
-}
-
-function getLog() {
-  if (!param.value.id) {
-    clearInterval(interval);
-    return;
   }
-  joblogLogDetailCat({
-    logId: param.value.id,
-    fromLineNum: 1
-  }).then(res => {
-    form.value = res.content;
-    if (refreshTime.value === 0) {
-      proxy.$modal.msgSuccess("获取日志成功！");
-    }
-    logTime.value = new Date();
-    open.value = true;
-  })
-}
-
+};
 </script>
 <style scoped>
 .my-header {

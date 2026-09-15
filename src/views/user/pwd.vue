@@ -14,48 +14,53 @@
   </el-dialog>
 </template>
 
-<script setup name="PasswordEdit">
+<script>
 import {userUpdatePwd} from "@/api/user";
 import {removeToken } from '@/utils/auth'
 import {ElMessageBox} from "element-plus";
 
-defineExpose({init})
-const { proxy } = getCurrentInstance();
-const open = ref(false);
-const title = ref("修改密码");
+export default {
+  name: "PasswordEdit",
+  data() {
+    return {
+      open: false,
+      title: "修改密码",
+      form: {},
+      rules: {
+        password: [{ required: true, message: "密码 不能为空", trigger: "blur" }],
+      }
+    };
+  },
+  methods: {
+    /** 表单重置 */
+    reset() {
+      this.form = {};
+      this.resetForm("editRef");
+    },
 
-const form = ref({});
-const rules = ref({
-  password: [{ required: true, message: "密码 不能为空", trigger: "blur" }],
-});
+    /** 取消按钮 */
+    cancel() {
+      this.open = false;
+      this.reset();
+    },
 
-/** 表单重置 */
-function reset() {
-  form.value = {};
-  proxy.resetForm("editRef");
-}
+    // 新增/修改按钮操作
+    init() {
+      this.reset();
+      this.open = true;
+    },
 
-/** 取消按钮 */
-function cancel() {
-  open.value = false;
-  reset();
-}
-
-// 新增/修改按钮操作
-function init() {
-  reset();
-  open.value = true;
-}
-
-/** 提交按钮 */
-function submitForm() {
-  proxy.$refs["editRef"].validate(valid => {
-    if (valid) {
-      userUpdatePwd(form.value).then(res => {
-        removeToken();
-        ElMessageBox.alert('密码修改成功，请重新登录!', '重新登录!', {  confirmButtonText: '确定', callback: (action) => location.href = '/'})
+    /** 提交按钮 */
+    submitForm() {
+      this.$refs["editRef"].validate(valid => {
+        if (valid) {
+          userUpdatePwd(this.form).then(res => {
+            removeToken();
+            ElMessageBox.alert('密码修改成功，请重新登录!', '重新登录!', {  confirmButtonText: '确定', callback: (action) => location.href = '/'})
+          });
+        }
       });
     }
-  });
-}
+  }
+};
 </script>

@@ -9,32 +9,35 @@
   </el-dialog>
 </template>
 
-<script setup name="TriggerRemark">
+<script>
+export default {
+  name: "TriggerRemark",
+  data() {
+    return {
+      open: false,
+      title: "执行备注",
+      form: {}
+    };
+  },
+  methods: {
+    /** 表单重置 */
+    reset() {
+      this.form = {};
+      this.resetForm("editRef");
+    },
 
-defineExpose({init})
-const { proxy } = getCurrentInstance();
-const open = ref(false);
-const title = ref("执行备注");
+    /** 取消按钮 */
+    cancel() {
+      this.open = false;
+      this.reset();
+    },
 
-const form = ref({});
-
-/** 表单重置 */
-function reset() {
-  form.value = {};
-  proxy.resetForm("editRef");
-}
-
-/** 取消按钮 */
-function cancel() {
-  open.value = false;
-  reset();
-}
-
-// 新增/修改按钮操作
-function init(row) {
-  reset();
-  form.value = JSON.parse(JSON.stringify(row))
-  open.value = true;
-}
-
+    // 新增/修改按钮操作
+    init(row) {
+      this.reset();
+      this.form = JSON.parse(JSON.stringify(row));
+      this.open = true;
+    }
+  }
+};
 </script>

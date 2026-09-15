@@ -19,55 +19,57 @@
   </el-dialog>
 </template>
 
-<script setup name="jobTrigger">
+<script>
 import {jobinfoTrigger} from "@/api/jobinfo";
 
-defineExpose({handleEdit})
-const emit = defineEmits(['change']);
-const { proxy } = getCurrentInstance();
-const open = ref(false);
-const title = ref("");
-
-const form = ref({
-  executorParam: '',
-  addressList: '',
-});
-const rules = ref({
-});
-
-/** 表单重置 */
-function reset() {
-  form.value = {};
-  proxy.resetForm("editRef");
-}
-
-/** 取消按钮 */
-function cancel() {
-  open.value = false;
-  reset();
-}
-
-// 新增/修改按钮操作
-function handleEdit(row) {
-  reset();
-  form.value = JSON.parse(JSON.stringify(row))
-  open.value = true;
-  title.value = "执行一次";
-}
-
-/** 提交按钮 */
-function submitForm() {
-  proxy.$refs["editRef"].validate(valid => {
-    if (valid) {
-      jobinfoTrigger({
-        id: form.value.id,
-        executorParam: form.value.executorParam || '',
-        addressList: form.value.addressList || ''
-      }).then(res => {
-        proxy.$modal.msgSuccess('执行一次成功');
-        open.value = false;
+export default {
+  name: "jobTrigger",
+  emits: ['change'],
+  data() {
+    return {
+      open: false,
+      title: "",
+      form: {
+        executorParam: '',
+        addressList: '',
+      },
+      rules: {
+      },
+    };
+  },
+  methods: {
+    /** 表单重置 */
+    reset() {
+      this.form = {};
+      this.resetForm("editRef");
+    },
+    /** 取消按钮 */
+    cancel() {
+      this.open = false;
+      this.reset();
+    },
+    // 新增/修改按钮操作
+    handleEdit(row) {
+      this.reset();
+      this.form = JSON.parse(JSON.stringify(row));
+      this.open = true;
+      this.title = "执行一次";
+    },
+    /** 提交按钮 */
+    submitForm() {
+      this.$refs["editRef"].validate(valid => {
+        if (valid) {
+          jobinfoTrigger({
+            id: this.form.id,
+            executorParam: this.form.executorParam || '',
+            addressList: this.form.addressList || ''
+          }).then(res => {
+            this.$modal.msgSuccess('执行一次成功');
+            this.open = false;
+          });
+        }
       });
-    }
-  });
-}
+    },
+  }
+};
 </script>

@@ -11,38 +11,40 @@
   </el-dialog>
 </template>
 
-<script setup name="jobNextTiggerTime">
+<script>
 import {jobinfoNextTriggerTime} from "@/api/jobinfo";
 
-defineExpose({handleEdit})
-const { proxy } = getCurrentInstance();
-const open = ref(false);
-const title = ref("");
-
-const nexts = ref([]);
-
-/** 表单重置 */
-function reset() {
-  nexts.value = [];
-}
-
-/** 取消按钮 */
-function cancel() {
-  open.value = false;
-  reset();
-}
-
-// 新增/修改按钮操作
-function handleEdit(row) {
-  reset();
-  jobinfoNextTriggerTime({
-    scheduleType: row.scheduleType,
-    scheduleConf: row.scheduleConf,
-  }).then(res => {
-    open.value = true;
-    title.value = "下次执行时间";
-    nexts.value = res.content;
-  })
-}
-
+export default {
+  name: "jobNextTiggerTime",
+  data() {
+    return {
+      open: false,
+      title: "",
+      nexts: [],
+    };
+  },
+  methods: {
+    /** 表单重置 */
+    reset() {
+      this.nexts = [];
+    },
+    /** 取消按钮 */
+    cancel() {
+      this.open = false;
+      this.reset();
+    },
+    // 新增/修改按钮操作
+    handleEdit(row) {
+      this.reset();
+      jobinfoNextTriggerTime({
+        scheduleType: row.scheduleType,
+        scheduleConf: row.scheduleConf,
+      }).then(res => {
+        this.open = true;
+        this.title = "下次执行时间";
+        this.nexts = res.content;
+      })
+    },
+  }
+};
 </script>

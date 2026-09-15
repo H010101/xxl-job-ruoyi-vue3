@@ -46,66 +46,73 @@
   </div>
 </template>
 
-<script setup>
+<script>
 import { encrypt, decrypt } from "@/utils/jsencrypt";
 import useUserStore from '@/store/modules/user'
 
-const userStore = useUserStore()
-const router = useRouter();
-const { proxy } = getCurrentInstance();
-
-const loginForm = ref({
-  userName: "",
-  password: "",
-  rememberMe: false,
-});
-
-const loginRules = {
-  userName: [{ required: true, trigger: "blur", message: "请输入您的账号" }],
-  password: [{ required: true, trigger: "blur", message: "请输入您的密码" }],
-};
-
-const loading = ref(false);
-const redirect = ref(undefined);
-
-function handleLogin() {
-  proxy.$refs.loginRef.validate(valid => {
-    if (valid) {
-      loading.value = true;
-      // 勾选了需要记住密码设置在 cookie 中设置记住用户名和密码
-      if (loginForm.value.rememberMe) {
-        localStorage.setItem("username", loginForm.value.username, { expires: 30 });
-        localStorage.setItem("password", encrypt(loginForm.value.password), { expires: 30 });
-        localStorage.setItem("rememberMe", loginForm.value.rememberMe, { expires: 30 });
-      } else {
-        // 否则移除
-        localStorage.removeItem("username");
-        localStorage.removeItem("password");
-        localStorage.removeItem("rememberMe");
-      }
-      // 调用action的登录方法
-      userStore.login(loginForm.value).then((res) => {
-        router.push({ path: redirect.value || "/" });
-      }).catch(() => {
-        loading.value = false;
-      });
+export default {
+  name: "Login",
+  computed: {
+    userStore() {
+      return useUserStore()
     }
-  });
-}
-
-function getCache() {
-  const username = localStorage.getItem("username");
-  const password = localStorage.getItem("password");
-  const rememberMe = localStorage.getItem("rememberMe");
-  loginForm.value = {
-    username: !!username ? username : '',
-    password: !!password ? decrypt(password) : '',
-    rememberMe: !!rememberMe ? Boolean(rememberMe) : false
-  };
-}
-
-getCache();
-console.log('心灵的付出没得到回音便会是孤单，记忆滞后太久，会退色，也会更鲜明');
+  },
+  data() {
+    return {
+      loginForm: {
+        userName: "",
+        password: "",
+        rememberMe: false,
+      },
+      loginRules: {
+        userName: [{ required: true, trigger: "blur", message: "请输入您的账号" }],
+        password: [{ required: true, trigger: "blur", message: "请输入您的密码" }],
+      },
+      loading: false,
+      redirect: undefined
+    };
+  },
+  created() {
+    this.getCache();
+    console.log('心灵的付出没得到回音便会是孤单，记忆滞后太久，会退色，也会更鲜明');
+  },
+  methods: {
+    handleLogin() {
+      this.$refs.loginRef.validate(valid => {
+        if (valid) {
+          this.loading = true;
+          // 勾选了需要记住密码设置在 cookie 中设置记住用户名和密码
+          if (this.loginForm.rememberMe) {
+            localStorage.setItem("username", this.loginForm.username, { expires: 30 });
+            localStorage.setItem("password", encrypt(this.loginForm.password), { expires: 30 });
+            localStorage.setItem("rememberMe", this.loginForm.rememberMe, { expires: 30 });
+          } else {
+            // 否则移除
+            localStorage.removeItem("username");
+            localStorage.removeItem("password");
+            localStorage.removeItem("rememberMe");
+          }
+          // 调用action的登录方法
+          this.userStore.login(this.loginForm).then((res) => {
+            this.$router.push({ path: this.redirect || "/" });
+          }).catch(() => {
+            this.loading = false;
+          });
+        }
+      });
+    },
+    getCache() {
+      const username = localStorage.getItem("username");
+      const password = localStorage.getItem("password");
+      const rememberMe = localStorage.getItem("rememberMe");
+      this.loginForm = {
+        username: !!username ? username : '',
+        password: !!password ? decrypt(password) : '',
+        rememberMe: !!rememberMe ? Boolean(rememberMe) : false
+      };
+    }
+  }
+};
 </script>
 
 <style lang='scss' scoped>

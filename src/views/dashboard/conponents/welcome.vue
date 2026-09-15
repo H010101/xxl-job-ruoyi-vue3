@@ -13,10 +13,21 @@
   </el-card>
 </template>
 
-<script setup>
+<script>
 import useUserStore from '@/store/modules/user'
-const userStore = useUserStore()
 import Avatar from '@/components/Avatar'
+
+export default {
+  name: "Welcome",
+  components: {
+    Avatar
+  },
+  computed: {
+    userStore() {
+      return useUserStore()
+    }
+  }
+};
 </script>
 
 <style lang="scss" scoped>

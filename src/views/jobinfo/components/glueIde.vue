@@ -17,63 +17,65 @@
   </el-dialog>
 </template>
 
-<script setup name="JobinfoGlue">
+<script>
 import {jobcodeSave} from "@/api/jobinfo";
 import MonacoEditor from '@/components/MonacoEditor'
 
-defineExpose({handleEdit})
-const emit = defineEmits(['change']);
-const { proxy } = getCurrentInstance();
-const open = ref(false);
-const title = ref("");
-
-const form = ref({});
-const rules = ref({
-  glueSource: [{ required: true, message: "源代码 不能为空", trigger: "blur" }],
-  glueRemark: [{ required: true, min: 4, max: 63, message: "源代码 备注不能少于4个字符！", trigger: "blur" }],
-});
-
-
-/** 表单重置 */
-function reset() {
-  form.value = {};
-  proxy.resetForm("editRef");
-}
-
-/** 取消按钮 */
-function cancel() {
-  open.value = false;
-  reset();
-}
-
-// 新增/修改按钮操作
-function handleEdit(row) {
-  reset();
-  if (!row || !row.id) {
-    return;
-  }
-
-  form.value = JSON.parse(JSON.stringify(row))
-  open.value = true;
-  title.value = "编辑: " + row.glueType + ": " + row.jobDesc;
-}
-
-/** 提交按钮 */
-function submitForm() {
-  proxy.$refs["editRef"].validate(valid => {
-    if (valid) {
-      if (form.value.id) {
-        jobcodeSave({
-          id: form.value.id,
-          glueSource: form.value.glueSource,
-          glueRemark: form.value.glueRemark
-        }).then(res => {
-          proxy.$modal.msgSuccess('修改成功');
-          open.value = false;
-          emit("change", true);
-        });
+export default {
+  name: "JobinfoGlue",
+  components: { MonacoEditor },
+  emits: ['change'],
+  data() {
+    return {
+      open: false,
+      title: "",
+      form: {},
+      rules: {
+        glueSource: [{ required: true, message: "源代码 不能为空", trigger: "blur" }],
+        glueRemark: [{ required: true, min: 4, max: 63, message: "源代码 备注不能少于4个字符！", trigger: "blur" }],
+      },
+    };
+  },
+  methods: {
+    /** 表单重置 */
+    reset() {
+      this.form = {};
+      this.resetForm("editRef");
+    },
+    /** 取消按钮 */
+    cancel() {
+      this.open = false;
+      this.reset();
+    },
+    // 新增/修改按钮操作
+    handleEdit(row) {
+      this.reset();
+      if (!row || !row.id) {
+        return;
       }
-    }
-  });
-}
+
+      this.form = JSON.parse(JSON.stringify(row));
+      this.open = true;
+      this.title = "编辑: " + row.glueType + ": " + row.jobDesc;
+    },
+    /** 提交按钮 */
+    submitForm() {
+      this.$refs["editRef"].validate(valid => {
+        if (valid) {
+          if (this.form.id) {
+            jobcodeSave({
+              id: this.form.id,
+              glueSource: this.form.glueSource,
+              glueRemark: this.form.glueRemark
+            }).then(res => {
+              this.$modal.msgSuccess('修改成功');
+              this.open = false;
+              this.$emit("change", true);
+            });
+          }
+        }
+      });
+    },
+  }
+};
 </script>

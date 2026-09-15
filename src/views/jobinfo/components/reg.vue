@@ -11,35 +11,37 @@
   </el-dialog>
 </template>
 
-<script setup name="jobReg">
+<script>
 import {jobgroupLoadById} from "@/api/jobgroup";
 
-defineExpose({handleEdit})
-const { proxy } = getCurrentInstance();
-const open = ref(false);
-const title = ref("");
-
-const jobgroup = ref({});
-
-/** 表单重置 */
-function reset() {
-  jobgroup.value = {};
-}
-
-/** 取消按钮 */
-function cancel() {
-  open.value = false;
-  reset();
-}
-
-// 新增/修改按钮操作
-function handleEdit(row) {
-  reset();
-  jobgroupLoadById({id: row.id}).then(res => {
-    open.value = true;
-    title.value = "注册节点";
-    jobgroup.value = res.content;
-  })
-}
-
+export default {
+  name: "jobReg",
+  data() {
+    return {
+      open: false,
+      title: "",
+      jobgroup: {},
+    };
+  },
+  methods: {
+    /** 表单重置 */
+    reset() {
+      this.jobgroup = {};
+    },
+    /** 取消按钮 */
+    cancel() {
+      this.open = false;
+      this.reset();
+    },
+    // 新增/修改按钮操作
+    handleEdit(row) {
+      this.reset();
+      jobgroupLoadById({id: row.id}).then(res => {
+        this.open = true;
+        this.title = "注册节点";
+        this.jobgroup = res.content;
+      })
+    },
+  }
+};
 </script>

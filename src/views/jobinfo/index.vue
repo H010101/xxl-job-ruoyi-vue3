@@ -86,166 +86,163 @@
    </div>
 </template>
 
-<script setup name="Jobinfo">
+<script>
 import {jobinfoPage, jobinfoRemove, jobinfoStart, jobinfoStop} from "@/api/jobinfo";
 import {jobgroupPage} from "@/api/jobgroup";
 import Edit from "./components/edit"
 import GlueIde from "./components/glueIde"
 import Exec from "./components/exec"
 import Reg from "./components/reg"
+import NextTiggerTime from "./components/nextTiggerTime"
 import GlueType from "@/api/dict/GlueType.json"
 import TriggerStatus from "@/api/dict/TriggerStatus.json"
-import NextTiggerTime from "./components/nextTiggerTime"
 
-
-const { proxy } = getCurrentInstance();
-const router = useRouter();
-
-const appOptions = ref([]);
-const dataList = ref([]);
-const loading = ref(false);
-const total = ref(0);
-
-const queryParams = ref({
-  start: 0,
-  length: 10,
-  current: 0,
-  size: 10,
-  jobGroup: 1,
-  triggerStatus: -1,
-  jobDesc: '',
-  executorHandler: '',
-  author: '',
-});
-
-function init() {
-  getApps();
-}
-
-function getApps() {
-  jobgroupPage({
-    start: 0,
-    length: 10000,
-    appname: '',
-    title: ''
-  }).then(res => {
-    appOptions.value = res.data;
-    if (appOptions.value && appOptions.value.length > 0) {
-      queryParams.value.jobGroup = appOptions.value[0].id;
-      getList();
-    }
-  });
-}
-
-
-/** 查询参数列表 */
-function getList() {
-  if (!queryParams.value.jobGroup) {
-    return;
+export default {
+  name: "Jobinfo",
+  components: { Edit, GlueIde, Exec, Reg, NextTiggerTime },
+  data() {
+    return {
+      appOptions: [],
+      dataList: [],
+      loading: false,
+      total: 0,
+      queryParams: {
+        start: 0,
+        length: 10,
+        current: 0,
+        size: 10,
+        jobGroup: 1,
+        triggerStatus: -1,
+        jobDesc: '',
+        executorHandler: '',
+        author: '',
+      },
+      GlueType,
+      TriggerStatus,
+    };
+  },
+  created() {
+    this.init();
+  },
+  methods: {
+    init() {
+      this.getApps();
+    },
+    getApps() {
+      jobgroupPage({
+        start: 0,
+        length: 10000,
+        appname: '',
+        title: ''
+      }).then(res => {
+        this.appOptions = res.data;
+        if (this.appOptions && this.appOptions.length > 0) {
+          this.queryParams.jobGroup = this.appOptions[0].id;
+          this.getList();
+        }
+      });
+    },
+    /** 查询参数列表 */
+    getList() {
+      if (!this.queryParams.jobGroup) {
+        return;
+      }
+      this.loading = true;
+      this.queryParams.start = this.queryParams.current * this.queryParams.size;
+      jobinfoPage(this.queryParams).then(res => {
+        this.dataList = res.data;
+        // res.recordsFiltered
+        this.total = res.recordsTotal;
+      }).finally(() => {
+        this.loading = false;
+      });
+    },
+    /** 搜索按钮操作 */
+    handleQuery() {
+      this.queryParams.current = 0;
+      this.getList();
+    },
+    /** 重置按钮操作 */
+    resetQuery() {
+      this.resetForm("queryRef");
+      this.handleQuery();
+    },
+    changeTriggerStatus(row) {
+      if (row.triggerStatus === 1) {
+        jobinfoStart({id: row.id}).then(res => {
+          this.$modal.msgSuccess("开启成功！");
+        }).catch(() => {
+          this.$modal.msgError("开启失败！");
+          row.triggerStatus = 0;
+        });
+      }
+      if (row.triggerStatus === 0) {
+        jobinfoStop({id: row.id}).then(res => {
+          this.$modal.msgSuccess("关闭成功！");
+        }).catch(() => {
+          this.$modal.msgError("关闭失败！");
+          row.triggerStatus = 1;
+        });
+      }
+    },
+    handleCommand(command, row) {
+      switch (command) {
+        case "handleCopy":
+          this.handleCopy(row);
+          break;
+        case "handleReg":
+          this.handleReg(row);
+          break;
+        case "handleNexttime":
+          this.handleNexttime(row);
+          break;
+        case "handleGlueIde":
+          this.handleGlueIde(row);
+          break;
+        case "handleDelete":
+          this.handleDelete(row);
+          break;
+        default:
+          break;
+      }
+    },
+    handleAdd() {
+      this.$refs["editRef"].handleEdit();
+    },
+    handleExec(row) {
+      this.$refs["execRef"].handleEdit(row);
+    },
+    handleGlueIde(row) {
+      this.$refs["glueIdeRef"].handleEdit(row);
+    },
+    handleLog(row) {
+      console.log('handleLog');
+      this.$router.push('/joblog?jobGroup='+row.jobGroup+'&jobId=' + row.id);
+    },
+    handleUpdate(row) {
+      this.$refs["editRef"].handleEdit(row);
+    },
+    handleCopy(row) {
+      row.id = undefined;
+      this.$refs["editRef"].handleEdit(row);
+    },
+    handleReg(row) {
+      this.$refs["regRef"].handleEdit(row);
+    },
+    handleNexttime(row) {
+      this.$refs["nextTiggerTimeRef"].handleEdit(row);
+    },
+    /** 删除按钮操作 */
+    handleDelete(row) {
+      this.$modal.confirm('是否确认删除:"' + row.jobDesc + '"？').then(() => {
+        jobinfoRemove({id: row.id}).then(res => {
+          this.getList();
+          this.$modal.msgSuccess("删除成功");
+        })
+      }).catch(() => {});
+    },
   }
-  loading.value = true;
-  queryParams.value.start = queryParams.value.current *  queryParams.value.size
-  jobinfoPage(queryParams.value).then(res => {
-    dataList.value = res.data;
-    // res.recordsFiltered
-    total.value = res.recordsTotal;
-  }).finally(() => {
-    loading.value = false;
-  });
-}
-
-/** 搜索按钮操作 */
-function handleQuery() {
-  queryParams.value.current = 0;
-  getList();
-}
-
-/** 重置按钮操作 */
-function resetQuery() {
-  proxy.resetForm("queryRef");
-  handleQuery();
-}
-
-function changeTriggerStatus(row) {
-  if (row.triggerStatus === 1) {
-    jobinfoStart({id: row.id}).then(res => {
-      proxy.$modal.msgSuccess("开启成功！");
-    }).catch(() => {
-      proxy.$modal.msgError("开启失败！");
-      row.triggerStatus = 0;
-    });
-  }
-  if (row.triggerStatus === 0) {
-    jobinfoStop({id: row.id}).then(res => {
-      proxy.$modal.msgSuccess("关闭成功！");
-    }).catch(() => {
-      proxy.$modal.msgError("关闭失败！");
-      row.triggerStatus = 1;
-    });
-  }
-}
-
-
-function handleCommand(command, row) {
-  switch (command) {
-    case "handleCopy":
-      handleCopy(row);
-      break;
-    case "handleReg":
-      handleReg(row);
-      break;
-    case "handleNexttime":
-      handleNexttime(row);
-      break;
-    case "handleGlueIde":
-      handleGlueIde(row);
-      break;
-    case "handleDelete":
-      handleDelete(row);
-      break;
-    default:
-      break;
-  }
-}
-
-function handleAdd() {
-  proxy.$refs["editRef"].handleEdit();
-}
-function handleExec(row) {
-  proxy.$refs["execRef"].handleEdit(row);
-}
-function handleGlueIde(row) {
-  proxy.$refs["glueIdeRef"].handleEdit(row);
-}
-function handleLog(row) {
-  console.log('handleLog');
-  router.push('/joblog?jobGroup='+row.jobGroup+'&jobId=' + row.id);
-}
-function handleUpdate(row) {
-  proxy.$refs["editRef"].handleEdit(row);
-}
-function handleCopy(row) {
-  row.id = undefined;
-  proxy.$refs["editRef"].handleEdit(row);
-}
-function handleReg(row) {
-  proxy.$refs["regRef"].handleEdit(row);
-}
-function handleNexttime(row) {
-  proxy.$refs["nextTiggerTimeRef"].handleEdit(row);
-}
-
-/** 删除按钮操作 */
-function handleDelete(row) {
-  proxy.$modal.confirm('是否确认删除:"' + row.jobDesc + '"？').then(() => {
-    jobinfoRemove({id: row.id}).then(res => {
-      getList();
-      proxy.$modal.msgSuccess("删除成功");
-    })
-  }).catch(() => {});
-}
-
-init();
+};
 </script>
 
 <style lang="scss" scoped>

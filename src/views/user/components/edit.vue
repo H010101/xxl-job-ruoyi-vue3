@@ -33,68 +33,73 @@
   </el-dialog>
 </template>
 
-<script setup name="UserEdit">
+<script>
 import {userAdd, userUpdate} from "@/api/user";
 
-defineExpose({handleEdit})
-const emit = defineEmits(['change']);
-const { proxy } = getCurrentInstance();
-const open = ref(false);
-const title = ref("");
-
-const form = ref({});
-const rules = ref({
-  username: [{ required: true, message: "用户名不能为空", trigger: "blur" }],
-  password: [{ required: true, message: "密码不能为空", trigger: "blur" }],
-  role: [{ required: true, message: "角色 不能为空", trigger: "blur" }],
-  permission: [{ required: false, message: "权限 不能为空", trigger: "blur" }],
-});
-
-/** 表单重置 */
-function reset() {
-  form.value = {
-    role: 0
-  };
-  proxy.resetForm("editRef");
-}
-
-/** 取消按钮 */
-function cancel() {
-  open.value = false;
-  reset();
-}
-
-// 新增/修改按钮操作
-function handleEdit(row) {
-  reset();
-  if (!row || !row.id) {
-    open.value = true;
-    title.value = "添加";
-  } else {
-    form.value = JSON.parse(JSON.stringify(row))
-    open.value = true;
-    title.value = "修改";
-  }
-}
-
-/** 提交按钮 */
-function submitForm() {
-  proxy.$refs["editRef"].validate(valid => {
-    if (valid) {
-      if (form.value.id) {
-        userUpdate(form.value).then(res => {
-          proxy.$modal.msgSuccess('修改成功');
-          open.value = false;
-          emit("change", true);
-        });
-      } else {
-        userAdd(form.value).then(res => {
-          proxy.$modal.msgSuccess('新增成功');
-          open.value = false;
-          emit("change", true);
-        });
+export default {
+  name: "UserEdit",
+  emits: ['change'],
+  data() {
+    return {
+      open: false,
+      title: "",
+      form: {},
+      rules: {
+        username: [{ required: true, message: "用户名不能为空", trigger: "blur" }],
+        password: [{ required: true, message: "密码不能为空", trigger: "blur" }],
+        role: [{ required: true, message: "角色 不能为空", trigger: "blur" }],
+        permission: [{ required: false, message: "权限 不能为空", trigger: "blur" }],
       }
+    };
+  },
+  methods: {
+    /** 表单重置 */
+    reset() {
+      this.form = {
+        role: 0
+      };
+      this.resetForm("editRef");
+    },
+
+    /** 取消按钮 */
+    cancel() {
+      this.open = false;
+      this.reset();
+    },
+
+    // 新增/修改按钮操作
+    handleEdit(row) {
+      this.reset();
+      if (!row || !row.id) {
+        this.open = true;
+        this.title = "添加";
+      } else {
+        this.form = JSON.parse(JSON.stringify(row));
+        this.open = true;
+        this.title = "修改";
+      }
+    },
+
+    /** 提交按钮 */
+    submitForm() {
+      this.$refs["editRef"].validate(valid => {
+        if (valid) {
+          if (this.form.id) {
+            userUpdate(this.form).then(res => {
+              this.$modal.msgSuccess('修改成功');
+              this.open = false;
+              this.$emit("change", true);
+            });
+          } else {
+            userAdd(this.form).then(res => {
+              this.$modal.msgSuccess('新增成功');
+              this.open = false;
+              this.$emit("change", true);
+            });
+          }
+        }
+      });
     }
-  });
-}
+  }
+};
 </script>

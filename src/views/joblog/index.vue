@@ -77,7 +77,7 @@
    </div>
 </template>
 
-<script setup name="Joblog">
+<script>
 import {joblogPage, joblogGetJobsByGroup} from "@/api/joblog";
 import {jobgroupPage} from "@/api/jobgroup";
 import { parseTime } from '@/utils/ruoyi';
@@ -89,157 +89,163 @@ import Clean from "./components/clean"
 import TriggerRemark from "./components/triggerRemark"
 import LogDetail from "./components/logDetail"
 
-const { proxy } = getCurrentInstance();
-const route = useRoute();
+export default {
+  name: "Joblog",
+  components: {
+    Clean,
+    TriggerRemark,
+    LogDetail
+  },
+  data() {
+    return {
+      LogStatus,
+      TriggerResult,
+      HandleResult,
+      appOptions: [],
+      jobsOptions: [],
+      dataList: [],
+      loading: false,
+      total: 0,
+      dateRange: [],
+      queryParams: {
+        start: 0,
+        length: 10,
+        current: 0,
+        size: 10,
+        jobGroup: -1,
+        jobId: 0,
+        logStatus: -1,
+        filterTime: '2023-08-12 00:00:00 - 2023-08-12 23:59:59'
+      }
+    };
+  },
+  created() {
+    this.init();
+  },
+  methods: {
+    parseTime,
+    init() {
+      const now = new Date();
+      this.dateRange = [
+        parseTime(now, '{y}-{m}-{d}') + ' 00:00:00',
+        parseTime(now, '{y}-{m}-{d}') + ' 23:59:59'
+      ];
+      this.appOptions.push({id: -1, title: '全部'})
+      this.jobsOptions.push({id: 0, jobDesc: '全部'})
 
-const appOptions = ref([]);
-const jobsOptions = ref([]);
-const dataList = ref([]);
-const loading = ref(false);
-const total = ref(0);
-const dateRange = ref([]);
+      const {query} = this.$route;
+      let jobGroup = query?.jobGroup;
+      let jobId = query?.jobId;
 
-const queryParams = ref({
-  start: 0,
-  length: 10,
-  current: 0,
-  size: 10,
-  jobGroup: -1,
-  jobId: 0,
-  logStatus: -1,
-  filterTime: '2023-08-12 00:00:00 - 2023-08-12 23:59:59'
-});
+      if (jobGroup && jobGroup > 0) {
+        this.queryParams.jobGroup = Number(jobGroup);
+        this.changeJobGroup(jobGroup);
+      }
+      if (jobId && jobId > 0) {
+        this.queryParams.jobId = Number(jobId);
+      }
 
-function init() {
-  const now = new Date();
-  dateRange.value = [
-    parseTime(now, '{y}-{m}-{d}') + ' 00:00:00',
-    parseTime(now, '{y}-{m}-{d}') + ' 23:59:59'
-  ];
-  appOptions.value.push({id: -1, title: '全部'})
-  jobsOptions.value.push({id: 0, jobDesc: '全部'})
+      // 非跳转场景，进入页面查询一次
+      if (!jobGroup && !jobId) {
+        this.handleQuery();
+      }
+      this.getApps();
+    },
+    getApps() {
+      jobgroupPage({
+        start: 0,
+        length: 10000,
+        appname: '',
+        title: ''
+      }).then(res => {
+        const data = res.data;
+        if (data && data.length > 0) {
+          for (const a of data) {
+            this.appOptions.push(a);
+          }
+        }
+      });
+    },
+    changeJobGroup(jobGroup) {
+      this.handleQuery();
+      if (jobGroup === -1) {
+        return;
+      }
+      this.getJobsOptions();
+    },
+    getJobsOptions() {
+      if (!this.queryParams.jobGroup) {
+        return;
+      }
+      this.jobsOptions = [];
+      this.jobsOptions.push({id: 0, jobDesc: '全部'})
+      if (this.queryParams.jobGroup === -1) {
+        return;
+      }
+      joblogGetJobsByGroup({jobGroup: this.queryParams.jobGroup}).then(res => {
+        const data = res.content;
+        if (data && data.length > 0) {
+          for (let d of data) {
+            this.jobsOptions.push(d)
+          }
+        }
+      })
+    },
+    /** 查询参数列表 */
+    getList() {
+      this.loading = true;
 
-  const {query} = route;
-  let jobGroup = query?.jobGroup;
-  let jobId = query?.jobId;
-
-  if (jobGroup && jobGroup > 0) {
-    queryParams.value.jobGroup = Number(jobGroup);
-    changeJobGroup(jobGroup);
-  }
-  if (jobId && jobId > 0) {
-    queryParams.value.jobId = Number(jobId);
-  }
-
-  // 非跳转场景，进入页面查询一次
-  if (!jobGroup && !jobId) {
-    handleQuery();
-  }
-  getApps();
-}
-
-function getApps() {
-  jobgroupPage({
-    start: 0,
-    length: 10000,
-    appname: '',
-    title: ''
-  }).then(res => {
-    const data = res.data;
-    if (data && data.length > 0) {
-        for (const a of data) {
-          appOptions.value.push(a);
+      if (this.dateRange.length === 2) {
+        const from = this.dateRange[0];
+        const to = this.dateRange[1];
+        this.queryParams.filterTime = from + ' - '+ to;
+      }
+      this.queryParams.start = this.queryParams.current *  this.queryParams.size
+      joblogPage(this.queryParams).then(res => {
+        this.dataList = res.data;
+        // res.recordsFiltered
+        this.total = res.recordsTotal;
+      }).finally(() => {
+        this.loading = false;
+      });
+    },
+    /** 搜索按钮操作 */
+    handleQuery() {
+      this.queryParams.start = 0;
+      this.getList();
+    },
+    /** 重置按钮操作 */
+    resetQuery() {
+      this.resetForm("queryRef");
+      this.handleQuery();
+    },
+    handleClean() {
+      const row = {};
+      row.jobGroup = this.queryParams.jobGroup;
+      row.jobId = this.queryParams.jobId;
+      for (const t of this.appOptions) {
+        if (t.id === row.jobGroup) {
+          row.jobGroupName = t.title;
+          break;
         }
       }
-  });
-}
-
-function changeJobGroup(jobGroup) {
-  handleQuery();
-  if (jobGroup === -1) {
-    return;
-  }
-  getJobsOptions();
-}
-
-function getJobsOptions() {
-  if (!queryParams.value.jobGroup) {
-    return;
-  }
-  jobsOptions.value = [];
-  jobsOptions.value.push({id: 0, jobDesc: '全部'})
-  if (queryParams.value.jobGroup === -1) {
-    return;
-  }
-  joblogGetJobsByGroup({jobGroup: queryParams.value.jobGroup}).then(res => {
-    const data = res.content;
-    if (data && data.length > 0) {
-      for (let d of data) {
-        jobsOptions.value.push(d)
+      for (const t of this.jobsOptions) {
+        if (t.id === row.jobId) {
+          row.jobName = t.jobDesc;
+          break;
+        }
       }
-    }
-  })
-}
-
-/** 查询参数列表 */
-function getList() {
-  loading.value = true;
-
-  if (dateRange.value.length === 2) {
-    const from = dateRange.value[0];
-    const to = dateRange.value[1];
-    queryParams.value.filterTime = from + ' - '+ to;
-  }
-  queryParams.value.start = queryParams.value.current *  queryParams.value.size
-  joblogPage(queryParams.value).then(res => {
-    dataList.value = res.data;
-    // res.recordsFiltered
-    total.value = res.recordsTotal;
-  }).finally(() => {
-    loading.value = false;
-  });
-}
-
-/** 搜索按钮操作 */
-function handleQuery() {
-  queryParams.value.start = 0;
-  getList();
-}
-
-/** 重置按钮操作 */
-function resetQuery() {
-  proxy.resetForm("queryRef");
-  handleQuery();
-}
-
-function handleClean() {
-  const row = {};
-  row.jobGroup = queryParams.value.jobGroup;
-  row.jobId = queryParams.value.jobId;
-  for (const t of appOptions.value) {
-    if (t.id === row.jobGroup) {
-      row.jobGroupName = t.title;
-      break;
+      this.$refs["cleanRef"].init(row);
+    },
+    cleanResult() {
+      this.getList();
+    },
+    handleRriggerRemark(row) {
+      this.$refs["triggerRemarkRef"].init(row);
+    },
+    handleLogDetail(row) {
+      this.$refs["logDetailRef"].init(row);
     }
   }
-  for (const t of jobsOptions.value) {
-    if (t.id === row.jobId) {
-      row.jobName = t.jobDesc;
-      break;
-    }
-  }
-  proxy.$refs["cleanRef"].init(row);
-}
-function cleanResult() {
-  getList();
-}
-function handleRriggerRemark(row) {
-  proxy.$refs["triggerRemarkRef"].init(row);
-}
-
-function handleLogDetail(row) {
-  proxy.$refs["logDetailRef"].init(row);
-}
-
-init();
+};
 </script>

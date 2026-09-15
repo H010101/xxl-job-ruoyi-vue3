@@ -28,47 +28,54 @@
   </el-dialog>
 </template>
 
-<script setup name="CleanLog">
+<script>
 import {joblogClearLog} from "@/api/joblog";
 
 import CleanType from "@/api/dict/CleanType.json"
 
-defineExpose({init})
-const emit = defineEmits(['change']);
-const { proxy } = getCurrentInstance();
-const open = ref(false);
-const title = ref("日志清理");
-const form = ref({});
+export default {
+  name: "CleanLog",
+  emits: ['change'],
+  data() {
+    return {
+      CleanType,
+      open: false,
+      title: "日志清理",
+      form: {}
+    };
+  },
+  methods: {
+    /** 表单重置 */
+    reset() {
+      this.form = {};
+      this.resetForm("editRef");
+    },
 
-/** 表单重置 */
-function reset() {
-  form.value = {};
-  proxy.resetForm("editRef");
-}
+    /** 取消按钮 */
+    cancel() {
+      this.open = false;
+      this.reset();
+    },
 
-/** 取消按钮 */
-function cancel() {
-  open.value = false;
-  reset();
-}
+    // 新增/修改按钮操作
+    init(row) {
+      this.reset();
+      this.form = JSON.parse(JSON.stringify(row));
+      this.form.type = 1;
+      this.open = true;
+    },
 
-// 新增/修改按钮操作
-function init(row) {
-  reset();
-  form.value = JSON.parse(JSON.stringify(row))
-  form.value.type = 1;
-  open.value = true;
-}
-
-function submitForm() {
-  joblogClearLog({
-    jobGroup: form.value.jobGroup,
-    jobId: form.value.jobId,
-    type: form.value.type
-  }).then(res => {
-    proxy.$modal.msgSuccess('清理成功');
-    open.value = false;
-    emit("change", true);
-  });
-}
+    submitForm() {
+      joblogClearLog({
+        jobGroup: this.form.jobGroup,
+        jobId: this.form.jobId,
+        type: this.form.type
+      }).then(res => {
+        this.$modal.msgSuccess('清理成功');
+        this.open = false;
+        this.$emit("change", true);
+      });
+    }
+  }
+};
 </script>
