@@ -36,7 +36,7 @@ export default {
     // 新增/修改按钮操作
     handleEdit(row) {
       this.reset();
-      jobgroupLoadById({id: row.id}).then(res => {
+      jobgroupLoadById({id: row.jobGroup}).then(res => {
         this.open = true;
         this.title = "注册节点";
         this.jobgroup = res.content;
