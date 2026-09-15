@@ -21,6 +21,7 @@
              v-model="dateRange"
              style='width: 380px'
              :clearable="false"
+             :default-time="['2026-09-13 00:00:00','2026-09-13 23:59:59']"
              value-format="YYYY-MM-DD HH:mm:ss" type="datetimerange"
              range-separator="-"
              start-placeholder="开始时间" end-placeholder="结束时间"/>
